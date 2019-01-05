@@ -1,7 +1,7 @@
 # ACF-Json-location-manager
-ACF companion class to help developers to manage the json file for syncronisation
+ACF companion class to help developers to manage the json files for syncronisation.
 
-The developer dilemna with ACF...
+##The developer dilemna with ACF...
 
 When a developer uses ACF, he can manage in a VCS like git or subversion all the field groups he work with.
 For this, he can add a json description of his field group and push it on his repo and the push it on  its production  site for example. 
@@ -19,6 +19,6 @@ Available locations are :
 
 The only thing to do is to create , in each theme or plugin he wants, an acf-json directory and the new location will be displayed as a new choice in the rule.
 
-Of course, on thos files are pushed on production, it will be possible to synchronize them as the standard way and used them.
+Of course, when those files are pushed on production, it will be possible to synchronize them using the standard 'ACF sync' way.
 
 ACF is a great tool and its creator, Eliott Condon, has put a lot of hooks in the code and this tool is using some of them to achieve the job.
