@@ -24,4 +24,17 @@ The only thing to do is to create , in each theme or plugin he wants, an acf-jso
 
 Of course, when those files are pushed on production, it will be possible to synchronize them using the standard 'ACF sync' way.
 
-ACF is a great tool and its creator, Eliott Condon, has put a lot of hooks in the code and this tool is using some of them to achieve the job.
+ACF is a great tool fot wordpress and its creator, Eliott Condon, has put a lot of hooks in the code and this tool is using some of them to achieve the job.
+
+##How to use it ?
+
+* Download the acf-json-location-manager.php file
+* include it in your theme using functions.php or in your plugin.
+* create acf-json directory in your plugins or themes (or use the existing one)
+
+Now when you edit a "Group field", you can add a new location rule 
+"JSON File" "saved in" #your plugin or theme#
+
+To move a json file from one dir to another just select the new location in the rule...The old one will be deleted.
+
+
