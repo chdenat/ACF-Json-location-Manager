@@ -45,6 +45,8 @@ namespace NOLEAM\ACF\UTILS;
 
 use function get_plugins;
 
+$acf_json_locator = new ACF_json_location_manager();
+
 Class ACF_json_location_manager {
 
 	private $json_dir;
