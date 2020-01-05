@@ -69,13 +69,13 @@ Class ACF_json_location_manager {
 
 		add_filter( 'acf/location/rule_types', [ $this, 'acf_location_rules_types' ] );
 		add_filter( 'acf/location/rule_values/json_location', [ $this, 'acf_location_rules_values_json_location' ] );
-		add_filter( 'acf/location/rule_match/json_location', [ $this, 'acf_location_rules_match_user' ], 10, 3 );
+		//add_filter( 'acf/location/rule_match/json_location', [ $this, 'acf_location_rules_match_user' ], 10, 3 );
 		add_filter( 'acf/settings/save_json', [ $this, 'acf_json_save_point' ] );
 		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ] );
 		add_filter( 'acf/location/rule_operators/json_location', [ $this, 'acf_location_rules_operators' ] );
 
 		if ( 'manual' === $this->sync ) {
-			add_filter( "acf/settings/load_json", [ $this, 'acf_json_load_all' ] );
+			add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_all' ] );
 		}
 
 		// That's all
@@ -105,7 +105,7 @@ Class ACF_json_location_manager {
 	 * @return mixed
 	 */
 
-	function acf_location_rules_types( $choices ) {
+	public function acf_location_rules_types( $choices ) {
 
 		// If we have some possible acf-json location, we add the rules else , nothing changes
 
@@ -144,6 +144,9 @@ Class ACF_json_location_manager {
 	function get_json_locations() {
 
 		$choices = [];
+		if ( ! function_exists( 'get_plugins' ) ) {
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+		}
 		$plugins = get_plugins();
 		foreach ( $plugins as $uri => $plugin_data ) {
 			$json_location = '/' . explode( '/', $uri )[0] . '/' . $this->json_dir;
@@ -188,7 +191,7 @@ Class ACF_json_location_manager {
 	 * @return mixed
 	 */
 
-	function acf_location_rules_values_json_location( $choices ) {
+	public function acf_location_rules_values_json_location( $choices ) {
 
 		// we concatenate the type and the value (type#value) in order to decode them later
 
@@ -217,7 +220,7 @@ Class ACF_json_location_manager {
 		return "$a#$b";
 	}
 
-	function acf_location_rules_match_json_location( $match, $rule, $options ) {
+	public function acf_location_rules_match_json_location( $match, $rule, $options ) {
 		//As it is a pseudo-rule we always return true, whatever the state of the world
 		return true;
 	}
@@ -316,7 +319,7 @@ Class ACF_json_location_manager {
 	 *
 	 * @return $paths with the right uri
 	 */
-	function acf_json_load_point( $paths ) {
+	public function acf_json_load_point( $paths ) {
 
 		// We fire this hook only if there is a post, we read it to check json-location and we push it as $path.
 
@@ -350,7 +353,7 @@ Class ACF_json_location_manager {
 	 * @return array
 	 */
 
-	function acf_json_load_all( $paths ) {
+	public function acf_json_load_all( $paths ) {
 
 		// We fire this hook only when we are on the acf_field_group page
 		// We scan $_POST to retrieve the screen_id then we check its content
