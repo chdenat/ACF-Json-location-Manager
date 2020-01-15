@@ -40,7 +40,7 @@ ACF is a great tool for wordpress and its creator, `Eliott Condon`, has inserted
 ![Meta Box 1](./docs/meta-1.png)
 ![Meta Box 2](./docs/meta-2.png)
 
-In the Field group Edition screen, you will have a `new meta box` used to select the associated json file.
+In the Field group Edition screen, you have now a `new meta box` used to select the associated json file.
 
 If you want to move a json file from one location to another just select the new location in the metabox,
 the old one will be deleted.
