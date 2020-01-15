@@ -42,8 +42,8 @@ ACF is a great tool for wordpress and its creator, `Eliott Condon`, has inserted
 
 In the Field group Edition screen, you will have a `new meta box` used to select the associated json file.
 
-If you want to move a json file from one location to another just select the new location in the metabox...
-The old one will be deleted.
+If you want to move a json file from one location to another just select the new location in the metabox,
+the old one will be deleted.
 
 ##Version log :
 - 1.0  (2020/01/15): first 'official' release 
