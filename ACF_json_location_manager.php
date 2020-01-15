@@ -2,42 +2,16 @@
 
 
 /**
- *  ACF_json_location_manager
+ * ACF_json_location_manager
  *
- *  Version : 0.9
- *  Author : Christian Denat mail : christian.denat @orange.fr  twitter : @chdenat  github @chdenat
+ * version : 1.0
+ * author : Christian Denat
+ * mail : christian.denat @orange.fr
+ * twitter : @chdenat
+ * github @chdenat
  *
- *  Feel free to use it freely, but with credits
- *
- *  The story :
- *
- *  When developers are using control version tools they need to use the ACF local json functionality
- * (see https://www.advancedcustomfields.com/resources/local-json/)
- *
- *  But the standard management allows only one directory to manage all the field groups to synchronize and
- *  that can be really annoying when you are working on plugins and theme on the same time or if you are using
- *  others ACF tool sthat already use this functionality.
- *
- *  The solution :
- *
- *  Now, with ACF_Json_location_manager, you just have to select, in a specific locations rule where you want to put
- *  your Json, and the hooks will do the trick !
- *
- *  by defaults, jsons dirs are named "acf-json" but this can be overload using args :
- *
- *       new ACF_json_location_manager(['dir'=>'any-name'])
- *
- *  For each plugin or theme (parent or child) you want to add json management, you just have to create the right
- *  sub directory in plugin or theme directory (same name for all).
- *
- *  ex :
- *     <plugin dir>
- *         !__ acf-json
- *         !_ others_dirs
- *
- *     <theme dir>
- *         !__ acf-json
- *         !_ others_dirs
+ *  Feel free to use it freely for personal or commercial use.
+ *  Credits will be appreciated.
  *
  */
 
@@ -45,120 +19,98 @@ namespace NOLEAM\ACF\UTILS;
 
 use function get_plugins;
 
-$acf_json_locator = new ACF_json_location_manager();
-
 Class ACF_json_location_manager {
+	/**
+	 * @var ACF_json_location_manager
+	 */
+	private static $instance;
 
+	/**
+	 * @var string
+	 */
 	private $json_dir;
-	private $type = 'json_location';
-	private $sync;
+	/**
+	 * @var string
+	 */
+	private $type = 'json-location';
+	/**
+	 * @var array of string
+	 */
+	private $location_list;
+	/**
+	 * @var
+	 */
+	private $post;
+	/**
+	 * @var string
+	 */
+	private $local_json;
+	/**
+	 * @var mixed
+	 */
+	private $tmp_dir;
 
+	/**
+	 * ACF_json_location_manager constructor.
+	 *
+	 * @param null $args
+	 */
 	function __construct( $args = null ) {
 
 		// Settings
 
 		$args = wp_parse_args( $args, [
-			'dir'  => 'acf-json',
-			'sync' => 'manual', //TODO add auto sync
+			'dir'  => 'acf-json',       // name of the json location
+			'tmp'  => 'tmp',            // prefix for load json ) <tmp>_<dir>
 		] );
 
 		$this->json_dir = $args['dir'];
-		$this->sync     = $args['sync'];
+		$this->tmp_dir  = $args['tmp'];
+
+		$this->set_json_locations();
+		$this->set_local_json();
 
 		// ACF hooks
-
-		add_filter( 'acf/location/rule_types', [ $this, 'acf_location_rules_types' ] );
-		add_filter( 'acf/location/rule_values/json_location', [ $this, 'acf_location_rules_values_json_location' ] );
-		//add_filter( 'acf/location/rule_match/json_location', [ $this, 'acf_location_rules_match_user' ], 10, 3 );
 		add_filter( 'acf/settings/save_json', [ $this, 'acf_json_save_point' ] );
-		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ] );
-		add_filter( 'acf/location/rule_operators/json_location', [ $this, 'acf_location_rules_operators' ] );
+		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ]);
 
-		if ( 'manual' === $this->sync ) {
-			add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_all' ] );
-		}
+		// Add a meta box for Json locations
+		add_action( 'acf/field_group/admin_head', [ $this, 'json_sync_group_settings' ] );
+
+		// Remove tmp file and dir.
+		add_action( 'acf/render_field_group_settings', [ $this, 'acf_clean_dir' ] );
 
 		// That's all
-
 	}
 
 	/**
+	 * Get all possible json locations in plugin or theme (parant+child)
 	 *
-	 * For our rule there's no choice so we define a more explicit text and delete the second.
-	 *
-	 * @param $choices
-	 *
-	 * @return array of one choice
+	 * @since 1.0
 	 */
-	function acf_location_rules_operators( $choices ) {
-
-		$choices       = [];
-		$choices['--'] = 'saved in';
-
-		return $choices;
-
-	}
-
-	/**
-	 * @param $choices
-	 *
-	 * @return mixed
-	 */
-
-	public function acf_location_rules_types( $choices ) {
-
-		// If we have some possible acf-json location, we add the rules else , nothing changes
-
-		if ( false !==
-		     $this->get_json_locations() ) {
-			$choices['JSON'][ $this->type ] = 'JSON file';
-		}
-
-		return $choices;
-	}
-
-	/**
-	 * Check all activated plugins  and parent/child theme to see if they contain an 'acf-json' directory and then
-	 * add to the rule type list with some additional infos.
-	 *
-	 * This implies that the 'acf-json' dirs had been created before in the plugins and/or themes.
-	 *
-	 * @return
-	 *
-	 * array : list of all json locations
-	 *
-	 *      for plugins :
-	 *
-	 *             $choices [<plugin-dir>/acf-json][text] : Text to be displayed + plugin info
-	 *                                             [type] : plugin
-	 *
-	 *      for theme :
-	 *            $choices ['child'|'parent'][text] : Text to be displayed + parent/child info
-	 *                     ['child'|'parent'] : 'child'|'parent'*
-	 *
-	 * bool : false if the list is empty (ie no 'acf-json' in the project)
-	 *
-	 */
-
 	private
-	function get_json_locations() {
+	function set_json_locations(): void {
 
-		$choices = [];
+		$this->location_list = [];
+
+		// Check inside plugins
 		if ( ! function_exists( 'get_plugins' ) ) {
 			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 		}
 		$plugins = get_plugins();
+
 		foreach ( $plugins as $uri => $plugin_data ) {
 			$json_location = '/' . explode( '/', $uri )[0] . '/' . $this->json_dir;
-			if ( is_dir( WP_PLUGIN_DIR . $json_location ) ) {
-
-				$choices[ $json_location ] ['text'] = 'Plugin ' . $plugin_data['Title'];
-				$choices[ $json_location ] ['type'] = 'plugin';
+			if ( is_dir( $path = WP_PLUGIN_DIR . $json_location ) ) {
+				$label                          = 'Plugin ' . $plugin_data['Title'];
+				$this->location_list [ $label ] = [
+					'type'  => 'plugin',
+					'value' => $path,
+				];
 			}
 		}
 
 		// Check the theme (and it's parent if it is a child) and add it to the selection list if it contains an 'acf-json' dir
-
 		$theme  = wp_get_theme();
 		$parent = $theme->get( 'Template' );
 		$name   = $theme->get( 'Name' );
@@ -168,207 +120,175 @@ Class ACF_json_location_manager {
 
 		//Child theme
 		if ( $child && is_dir( $path = get_stylesheet_directory() . '/' . $this->json_dir ) ) {
-			$choices['child']['text'] = 'Theme ' . $name . ' (child)';
-			$choices['child']['type'] = 'child';
+			$label                          = 'Theme ' . $name . ' (child)';
+			$this->location_list [ $label ] = [
+				'type'  => 'child',
+				'value' => $path,
+			];
 		}
 
 		//Parent or single theme
 		if ( is_dir( $path = get_template_directory() . '/' . $this->json_dir ) ) {
-			$choices['parent']['text'] = 'Theme ' . ( ( $child ) ? $parent : $name ) . ( ( $child ) ? ' (parent)' : '' );
-			$choices['parent']['type'] = 'parent';
+			$label                          = 'Theme ' . $name . ( ( $child ) ? ' (parent)' : '' );
+			$this->location_list [ $label ] = [
+				'type'  => ( $child ) ? 'parent' : 'theme',
+				'value' => $path,
+			];
 		}
-
-		// Returns the array or false if empty
-		return count( $choices ) ? $choices : false;
 	}
 
 	/**
+	 * Copy all the json file found to a sub directory of upload directory
 	 *
-	 * Build the selection list according to the available locations.
-	 *
-	 * @param $choices
-	 *
-	 * @return mixed
+	 * @since 1.0
 	 */
+	private function set_local_json():void {
+		$this->local_json = wp_get_upload_dir()['basedir']. '/' . $this->tmp_dir . '-' . $this->json_dir;
 
-	public function acf_location_rules_values_json_location( $choices ) {
-
-		// we concatenate the type and the value (type#value) in order to decode them later
-
-		$list = $this->get_json_locations();
-
-		if ( false !== $list ) {
-			foreach ( $list as $key => $item ) {
-				$choices[ $this->add_hash( $item['type'], $key ) ] = $item['text'];
+		if ( ! file_exists( $this->local_json ) ) {
+			if ( ! mkdir( $concurrentDirectory = $this->local_json ) && ! is_dir( $concurrentDirectory ) ) {
+				throw new \RuntimeException( sprintf( 'Directory "%s" was not created', $concurrentDirectory ) );
 			}
 		}
-
-		return $choices;
-	}
-
-	/**
-	 *
-	 * Concatenate the 2 values with #
-	 *
-	 * @param $a
-	 * @param $b
-	 *
-	 * @return string
-	 */
-
-	private function add_hash( $a, $b ) {
-		return "$a#$b";
-	}
-
-	public function acf_location_rules_match_json_location( $match, $rule, $options ) {
-		//As it is a pseudo-rule we always return true, whatever the state of the world
-		return true;
-	}
-
-	/**
-	 *
-	 * Hook when saving  field_group :
-	 *
-	 * According to  the user selection, we use the right path.
-	 * To avoid doublons if the path has changed, we remove the group (if it is  existing) in other locations.
-	 *
-	 * @param $path
-	 *
-	 * @return the path or false
-	 */
-
-	function acf_json_save_point( $path ) {
-
-		// update path
-
-		$path = null;
-
-		// We scan $_POST to see if the user has defined a "json location rule"
-
-		if ( isset( $_POST['acf_field_group']['location'] ) ) {
-			foreach ( $_POST['acf_field_group']['location'] as $group ) {
-				foreach ( $group as $rule ) {
-					if ( isset( $rule['value'] ) && $rule['param'] === $this->type ) {
-						$path = $this->build_json_uri( $rule['value'] );
-						break 2;
-					}
+		if ( is_dir( $this->local_json ) ) {
+			foreach ( $this->location_list as $location ) {
+				foreach (
+					$scanned_directory = array_diff( scandir( $location['value'] ), [
+						'..',
+						'.'
+					] ) as $file
+				) {
+					copy( $location['value'] . '/' . $file, $this->local_json . '/' . $file );
 				}
 			}
 		}
+	}
 
-		// May be the location has changed (TODO see if it is possible to check it programatically)
-		// So we check all other possible json-location and delete the old json if it exists.
+	/**
+	 * Unic instantiation
+	 *
+	 * @since 1.0
+	 * @return ACF_json_location_manager
+	 */
+	public static function getInstance() {
+		// Check is $_instance has been set
+		if ( ! isset( self::$instance ) ) {
+			// Creates sets object to instance
+			self::$instance = new ACF_json_location_manager();
+		}
 
-		// In case  "json location rule" has been removed from the edit field group page, we remove the last
-		// created json file
+		// Returns the instance
+		return self::$instance;
+	}
 
-		$choices = $this->get_json_locations();
-		if ( false !== $choices ) {
-			foreach ( $choices as $key => $location ) {
-				$uri  = $this->build_json_uri( $this->add_hash( $location['type'], $key ) );
-				$file = $uri . '/' . $_POST['post_name'] . '.json';
-				if ( $uri !== $path && file_exists( $file ) ) {
+	/**
+	 * acf/settings/save_json hook
+	 *
+	 * According to  the user selection, we use the right path for acf-json
+	 * To avoid doublons if the path has changed, we remove the .json file (if it is  existing) in other locations.
+	 *
+	 * @param $path
+	 * @since 0.1
+	 * @return string | false
+	 */
+	public function acf_json_save_point( $path ) {
+
+		// We scan $_POST
+		$location = $_POST['acf_field_group'][ $this->type ];
+
+		if ( isset( $location ) && isset( $this->location_list[ $location ] ) ) {
+			$path = $this->location_list[ $location ]['value'];
+
+			// In case the location has  changed, we remove the former json file.
+			// We scan all possible locations an remove file if not the current
+		}
+		if ( null !== $path ) {
+			foreach ( $this->location_list as $key => $location ) {
+				$file = $location['value'] . '/' . $_POST['post_name'] . '.json';
+				if ( $location['value'] !== $path && file_exists( $file ) ) {
 					@unlink( $file );
 				}
 			}
 		}
 
-		return ( $path !== null ) ? $path : false;
-
-	}
-
-	/**
-	 *
-	 * Build the right uri according to the 'standard path' and the context
-	 *
-	 * @param $path contains
-	 *
-	 * - parent#parent for a parent theme
-	 * - child#child for a child theme
-	 * - plugin#<plugin-uri> for a plugin
-	 *
-	 * @return string that contains the real json location path
-	 */
-
-	private function build_json_uri( $path ) {
-		$info = explode( "#", $path );
-		if ( count( $info ) === 2 ) {
-			switch ( $info[0] ) {
-				case 'child': // returns child path
-					$path = get_stylesheet_directory() . '/' . $this->json_dir;
-					break;
-				case 'parent': // returns parent path
-					$path = get_template_directory() . '/' . $this->json_dir;
-					break;
-				case 'plugin': // returns plugin path;
-					$path = WP_PLUGIN_DIR . $info[1]; //TODO check if we can use WP_PLUGIN_DIR on each deployment
-					break;
-				default :
-					$path = null;
-			}
-		}
 
 		return $path;
+
+	}
+
+	/**
+	 * acf/render_field_group_settings hook
+	 *
+	 * Clean the temp directory which contains the tmp json to sync
+	 *  Hook called called the group field page is ended
+	 *
+	 * @since 1.0
+	 */
+	public function acf_clean_dir():void {
+
+			// it's time to clean the tmp_ directory.
+			if ( file_exists( $this->local_json ) ) {
+				foreach (
+					$scanned_directory = array_diff( scandir( $this->local_json ), [
+						'..',
+						'.'
+					] ) as $file
+				) {
+					@unlink( $this->local_json . '/' . $file );
+				}
+				@rmdir ( $this->local_json );
+			}
 	}
 
 	/**
 	 *
-	 * Hook when loading the field group : we fire this hooks just in cae we are in the field group edition
+	 * acf/settings/load_json hook
 	 *
 	 * @param $paths
-	 *
-	 * @return $paths with the right uri
+	 * @since 0.1
+	 * @return array of paths with the right uri
 	 */
 	public function acf_json_load_point( $paths ) {
 
-		// We fire this hook only if there is a post, we read it to check json-location and we push it as $path.
-
-		// To check, we scan $_GET[post] to retrieve the post number then we unserialize the content
-
-		if ( isset( $_GET['post'] ) ) {
-			unset( $paths[0] );
-
-			$content = maybe_unserialize( get_post( $_GET['post'] )->post_content );
-			if ( isset( $content['location'][0] ) ) {
-				foreach ( $content['location'][0] as $rule ) {
-					if ( isset( $rule['value'] ) && $rule['param'] === $this->type ) {
-						$path[] = $this->build_json_uri( $rule['value'] );
-						break;
-					}
-				}
-			}
-		}
-
+		$paths[0] = $this->local_json;
 		return $paths;
 	}
 
 	/**
+	 * acf/field_group/admin_head hook
 	 *
-	 * Hook when loading all  field group : we fire this hooks just in case we are in the field_groups page
+	 * Adds the metabox  used to select json location
 	 *
-	 * We'll retrieve all the available json location to help synchronization.
-	 *
-	 * @param $paths
-	 *
-	 * @return array
+	 * @since 1.0
 	 */
+	public
+	function json_sync_group_settings(): void {
 
-	public function acf_json_load_all( $paths ) {
+		add_meta_box( 'acf-field-group-json-location', __( 'Json sync Settings', 'noleam' ), function () {
 
-		// We fire this hook only when we are on the acf_field_group page
-		// We scan $_POST to retrieve the screen_id then we check its content
-		//          $_POST['screen_id'] === 'edit-acf-field-group'
+			global $field_group;
 
-		if ( isset( $_POST['screen_id'] ) && 'edit-acf-field-group' === $_POST['screen_id'] ) {
-			unset( $paths[0] );
-
-			$locations = $this->get_json_locations();
-			foreach ( $locations as $key => $location ) {
-				$paths[] = $this->build_json_uri( $this->add_hash( $location['type'], $key ) );
+			$locations = [ '0' => __( 'none' ) ];
+			foreach ( $this->location_list as $key => $location ) {
+				$locations[ $key ] = $key;
 			}
-		}
 
-		return $paths;
+			// Form settings
+			acf_render_field_wrap( array(
+				'label'        => __( 'Json location', 'noleam' ),
+				'name'         => $this->type,
+				'prefix'       => 'acf_field_group',
+				'type'         => 'select',
+				'ui'           => 1,
+				'instructions' => __( 'Select a location', 'noleam' ),
+				'value'        => $field_group[ $this->type ],
+				'choices'      => $locations,
+				'required'     => false,
+			) ); ?>
+			<?php
+		}, 'acf-field-group', 'normal' );
+
 	}
-
 }
+
+ACF_json_location_manager::getInstance();
