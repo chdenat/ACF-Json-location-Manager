@@ -4,7 +4,7 @@
 /**
  * ACF_json_location_manager
  *
- * version : 1.0
+ * version : 1.1
  * author : Christian Denat
  * mail : christian.denat @orange.fr
  * twitter : @chdenat
