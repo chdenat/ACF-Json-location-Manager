@@ -20,10 +20,11 @@ namespace NOLEAM\ACF\UTILS;
 use function get_plugins;
 
 Class ACF_json_location_manager {
+
 	/**
 	 * @var ACF_json_location_manager
 	 */
-	private static $instance;
+	private static $_instance;
 
 	/**
 	 * @var string
@@ -49,6 +50,14 @@ Class ACF_json_location_manager {
 	 * @var mixed
 	 */
 	private $tmp_dir;
+	/**
+	 * @var boolean
+	 */
+	private $auto_sync;
+	/**
+	 * @var const array of string
+	 */
+	private const available_options = [ 'dir', 'tmp', 'sync' ];
 
 	/**
 	 * ACF_json_location_manager constructor.
@@ -60,19 +69,19 @@ Class ACF_json_location_manager {
 		// Settings
 
 		$args = wp_parse_args( $args, [
-			'dir'  => 'acf-json',       // name of the json location
-			'tmp'  => 'tmp',            // prefix for load json ) <tmp>_<dir>
+			'dir'       => 'acf-json',  // name of the json location
+			'tmp'       => 'tmp',       // prefix for load json ) <tmp>_<dir>
+			'sync' => false             // set to manual
 		] );
 
-		$this->json_dir = $args['dir'];
-		$this->tmp_dir  = $args['tmp'];
+		$this->settings( $args );
 
 		$this->set_json_locations();
 		$this->set_local_json();
 
 		// ACF hooks
 		add_filter( 'acf/settings/save_json', [ $this, 'acf_json_save_point' ] );
-		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ]);
+		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ] );
 
 		// Add a meta box for Json locations
 		add_action( 'acf/field_group/admin_head', [ $this, 'json_sync_group_settings' ] );
@@ -142,8 +151,8 @@ Class ACF_json_location_manager {
 	 *
 	 * @since 1.0
 	 */
-	private function set_local_json():void {
-		$this->local_json = wp_get_upload_dir()['basedir']. '/' . $this->tmp_dir . '-' . $this->json_dir;
+	private function set_local_json(): void {
+		$this->local_json = wp_get_upload_dir()['basedir'] . '/' . $this->tmp_dir . '-' . $this->json_dir;
 
 		if ( ! file_exists( $this->local_json ) ) {
 			if ( ! mkdir( $concurrentDirectory = $this->local_json ) && ! is_dir( $concurrentDirectory ) ) {
@@ -167,18 +176,46 @@ Class ACF_json_location_manager {
 	/**
 	 * Unic instantiation
 	 *
-	 * @since 1.0
 	 * @return ACF_json_location_manager
+	 * @since 1.0
 	 */
-	public static function getInstance() {
-		// Check is $_instance has been set
-		if ( ! isset( self::$instance ) ) {
-			// Creates sets object to instance
-			self::$instance = new ACF_json_location_manager();
+	public static function getInstance(): ACF_json_location_manager {
+		if ( ! isset( self::$_instance ) ) {
+			self::$_instance = new ACF_json_location_manager();
 		}
 
-		// Returns the instance
-		return self::$instance;
+		return self::$_instance;
+	}
+
+	/**
+	 * Settings
+	 *
+	 * @param null $options
+	 */
+	public function settings( $options = null ) : void {
+		if ( $options !== null ) {
+			foreach ( $options as $option ) {
+				switch ( $option ) {
+					case 'mode':
+						$this->auto_sync = $options['sync'];
+						break;
+					case 'tmp' :
+						$this->json_dir = $options['dir'];
+						break;
+					case 'dir':
+						$this->tmp_dir = $options['tmp'];
+						break;
+					default :
+				}
+			}
+		}
+	}
+
+	/**
+	 * @return const
+	 */
+	private static function getAvailableOptions(): array {
+		return self::available_options;
 	}
 
 	/**
@@ -188,8 +225,9 @@ Class ACF_json_location_manager {
 	 * To avoid doublons if the path has changed, we remove the .json file (if it is  existing) in other locations.
 	 *
 	 * @param $path
-	 * @since 0.1
+	 *
 	 * @return string | false
+	 * @since 0.1
 	 */
 	public function acf_json_save_point( $path ) {
 
@@ -224,20 +262,20 @@ Class ACF_json_location_manager {
 	 *
 	 * @since 1.0
 	 */
-	public function acf_clean_dir():void {
+	public function acf_clean_dir(): void {
 
-			// it's time to clean the tmp_ directory.
-			if ( file_exists( $this->local_json ) ) {
-				foreach (
-					$scanned_directory = array_diff( scandir( $this->local_json ), [
-						'..',
-						'.'
-					] ) as $file
-				) {
-					@unlink( $this->local_json . '/' . $file );
-				}
-				@rmdir ( $this->local_json );
+		// it's time to clean the tmp_ directory.
+		if ( file_exists( $this->local_json ) ) {
+			foreach (
+				$scanned_directory = array_diff( scandir( $this->local_json ), [
+					'..',
+					'.'
+				] ) as $file
+			) {
+				@unlink( $this->local_json . '/' . $file );
 			}
+			@rmdir( $this->local_json );
+		}
 	}
 
 	/**
@@ -245,12 +283,14 @@ Class ACF_json_location_manager {
 	 * acf/settings/load_json hook
 	 *
 	 * @param $paths
-	 * @since 0.1
+	 *
 	 * @return array of paths with the right uri
+	 * @since 0.1
 	 */
 	public function acf_json_load_point( $paths ) {
 
 		$paths[0] = $this->local_json;
+
 		return $paths;
 	}
 
