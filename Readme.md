@@ -94,7 +94,8 @@ the old one will be deleted.
 
 
 
-##Version log :
+##Version log
+
 ###1.1  (2020/01/17): 
 - add : external settings
 - change : code structure, variable and method names
