@@ -94,14 +94,14 @@ the old one will be deleted.
 
 
 
-##Version log
+## Version log
 
-###1.1  (2020/01/17): 
+### 1.1  (2020/01/17): 
 - add : external settings
 - change : code structure, variable and method names
 - add : more explanation in the Readme.
               
-###1.0  (2020/01/15): 
+### 1.0  (2020/01/15): 
 - first 'official' release 
 
 ## Requirements
