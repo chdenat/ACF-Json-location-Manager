@@ -79,8 +79,8 @@ ACF_json_location_manager::init([
 ]);
 ```
 ### Creating directories
-- create an `json-dir` directory (`acf-json` if you do not use your own settings) in your plugins or themes 
-if they are not existing. And it's all !! (the `load-json` will be automatically created !
+Create an `json-dir` directory (`acf-json` if you do not use your own settings) in the plugins or themes you want 
+to save your json files, if they are not existing. And it's all !! (the `load-json` will be automatically created !
 
 
 ### Using AJLM
