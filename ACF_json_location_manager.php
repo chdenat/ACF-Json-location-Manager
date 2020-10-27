@@ -4,7 +4,7 @@
 /**
  * ACF_json_location_manager
  *
- * version : 1.1
+ * version : 1.2
  * author : Christian Denat
  * mail : christian.denat @orange.fr
  * twitter : @chdenat
@@ -54,7 +54,6 @@ Class ACF_json_location_manager {
 	function __construct( $args = null ) {
 
 		$this->settings( $args );
-
 		// ACF hooks
 		add_filter( 'acf/settings/save_json', [ $this, 'acf_json_save_point' ] );
 		add_filter( 'acf/settings/load_json', [ $this, 'acf_json_load_point' ] );
@@ -90,8 +89,8 @@ Class ACF_json_location_manager {
 						$this->auto_sync = $option;
 						break;
 					case 'load-json' :  // dir used to centralize all files for 'acf/settings/load_json' hook
-						// This is a sub-dir or uploads directory
-						$this->load_json = wp_get_upload_dir()['basedir'] . '/' . $option;
+						// saved in theme root, in order to change theme without problem
+						$this->load_json = get_theme_root() .'/' . $option;
 						break;
 					case 'json-dir':    // dir where json are saved using 'acf/settings/save_json' hook
 						$this->json_dir = $option;
@@ -132,7 +131,7 @@ Class ACF_json_location_manager {
 	/**
 	 * Get all possible json locations in plugin or theme (parent+child)
 	 *
-	 * We scann all possible directories (plugins and themes) to check if json_dir exists.
+	 * We scan all possible directories (plugins and themes) to check if json_dir exists.
 	 *
 	 * @since 1.0
 	 */
