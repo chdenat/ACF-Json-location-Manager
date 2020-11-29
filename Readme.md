@@ -22,7 +22,7 @@ themes), it could be a problem.
 With only one JSON file, the plugin and theme group fields will be mixed in one place, ACF for themes and ACF for 
 plugins... :( Really annoying if the developer maintains one repo for plugin, one for theme.
 
-## My solution : ACF Json location Manager
+## Our solution : ACF Json location Manager
 
 **ACF Json location Manager** is a class that adds the possibility, for each field group, to select the json file
  location. Then, the developer can decide where he wants to put his json. When a Json file is pulled on a specific 
@@ -32,6 +32,7 @@ plugins... :( Really annoying if the developer maintains one repo for plugin, on
 Available locations are :
 - Activated plugins
 - Themes (parent and/or child)
+- any other location using a specific hook
 
 The only thing to do is to create, in the required theme or plugin, a location directory and this new location will
  be displayed as a new choice in Json Sync metabox in group edit screen..
@@ -43,11 +44,11 @@ using the standard `ACF synchronize` mode.
 ACF is a great tool for wordpress and its creator, `Eliott Condon`, has inserted a lot of hooks in the code and 
 AJLM tool is using some of them to achieve the job.
 
-- During the load process, for syncronisation, AJLM scans all the possible directories (themes or plugins) to check
- if there is a location directory. All the json files are the copied to a specific directory, used by the
-  "load-json" ACF hook. This directory stands in theme/uploads directory, under a directory called ajlm by default 
-  (itt is possible to use another name, see below).
-- During the save process, AJSLM will checks the location bound to the Field group using 'save-json' ACF Hook. 
+- During the load process, for syncronisation, AJLM scans all the possible directories (themes,plugins or manualy add) to check
+ if there is a location directory. All the json files are then copied to a specific directory, used by the
+  `load-json` ACF hook. This directory stands in theme directory, under a directory called  `ajlm` by default 
+  (it is possible to use another name, see below).
+- During the save process, AJLM will checks the location bound to the Field group using 'save-json' ACF Hook. 
 Then ACF will save the json file in the right place.
 
 ## How to use it ?
@@ -78,6 +79,24 @@ ACF_json_location_manager::init([
     'load-json' => 'all-jsons',
 ]);
 ```
+
+### `ajlm/manage-json-location` filter
+
+Using this filter, it is possible to add new location or change or remove existing ones.
+```PHP
+add_filter( 'ajlm/manage-json-location', function ( $locations ) {
+	
+	// Add the possibility to save json files in my WSL home
+	$locations['home'] = [
+		'type'  => 'other',
+		'value' => '/home/christian/acf-json',
+		'name'  => 'Home'
+	];
+
+	return $locations;
+} );
+```
+
 ### Creating directories
 Create a `json-dir` directory (`acf-json` if you do not use your own settings) in the plugins or themes you want 
 to save your json files, if it is not existing. And it's all !! (the `load-json` will be automatically created !
@@ -90,11 +109,17 @@ In the Field group Edition screen, you have now a `new meta box` used to select 
 ![Meta Box 1](./docs/meta-1.png) ![Meta Box 2](./docs/meta-2.png)
 
 If you want to move a json file from one location to another just select the new location in the metabox,
-the old one will be deleted.
+the file in the former location will be removed. 
 
-
+By default : location is in the current theme (as ACF)
 
 ## Version log
+
+### 2.0  (2020/11/29):
+- Revamp and clean code
+- fix issues (a lot)
+- add `ajlm/manage-json-location` filter to manage the location list (add/remove/change)
+- add trash/untrash hooks
 
 ### 1.1  (2020/01/17): 
 - add : external settings
@@ -104,6 +129,9 @@ the old one will be deleted.
 ### 1.0  (2020/01/15): 
 - first 'official' release 
 
+## Known Issues
+- 2.0 : during trash process, some delete groups appeared as ready to syn, but syncing them, erase their content.
+
 ## Requirements
-- ACF release 5.8 (not tested under)
+- ACF release 5.9 (not tested under)
 - PHP 7.2
