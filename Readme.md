@@ -2,7 +2,7 @@
 ACF companion class to help developers to manage the json files location (plugins and/or themes) for synchronization 
 on different platforms.
 
-- Version 1.1
+- Version 2.0
 
 ## The developer dilemma with ACF...
 
@@ -128,9 +128,6 @@ By default : location is in the current theme (as ACF)
               
 ### 1.0  (2020/01/15): 
 - first 'official' release 
-
-## Known Issues
-- 2.0 : during trash process, some delete groups appeared as ready to syn, but syncing them, erase their content.
 
 ## Requirements
 - ACF release 5.9 (not tested under)
