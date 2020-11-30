@@ -1,8 +1,8 @@
 # ACF-Json-location-manager
-ACF companion class to help developers to manage the json files location (plugins and/or themes) for synchronization 
-on different platforms.
+ACF companion class to help developers to manage the json file locations (plugins, themes or user defined) 
+for synchronization on different platforms.
 
-- Version 2.0
+- Version 2.1
 
 ## The developer dilemma with ACF...
 
@@ -40,6 +40,9 @@ The only thing to do is to create, in the required theme or plugin, a location d
 When those files will be pushed on another platform (staging or production), it is  possible to synchronize them 
 using the standard `ACF synchronize` mode.
 
+In the group field admin table, admin can see (if enabled) the JSON location for each Field Group,
+in the JSON Local column. This is only available since ACF 5.9 release.
+
 ## How it works 
 ACF is a great tool for wordpress and its creator, `Eliott Condon`, has inserted a lot of hooks in the code and 
 AJLM tool is using some of them to achieve the job.
@@ -75,8 +78,9 @@ By default, AJLM will use :
 but it is possible to use your own settings by specifying some parameters during the init call.
 ```PHP
 ACF_json_location_manager::init([
-    'json-dir'  => 'my-json', 
-    'load-json' => 'all-jsons',
+    'json-dir'  => 'my-json',     // need tp create a my-json directory in each dir we want to use
+    'load-json' => 'all-jsons',   // during the load phase, jsons are temporary saved in `WP_CONFIG/all-jsons`dir.
+    'add-column' => 'false'       // We do not want to see the information in admin table
 ]);
 ```
 
@@ -114,6 +118,11 @@ the file in the former location will be removed.
 By default : location is in the current theme (as ACF)
 
 ## Version log
+
+### 2.1  (2020/11/30):
+- add the possibility (enabled by default) to display the JSON location in the Field Group admin table,
+  in JSON Local column (ACF 5.9+) . This can be disabled in settings. 
+
 
 ### 2.0  (2020/11/29):
 - Revamp and clean code

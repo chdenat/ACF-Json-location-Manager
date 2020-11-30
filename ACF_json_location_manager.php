@@ -9,7 +9,7 @@
  * it manages jsons when required ie during load, save, trash, un trash or delete actions.
  *
  *
- * @version : 2.0
+ * @version : 2.1
  * @author : Christian Denat
  * @mail : contact@noleam.fr
  *
@@ -50,6 +50,10 @@ class ACF_json_location_manager {
 	 * @var string
 	 */
 	private string $load_json;
+	/**
+	 * @var mixed
+	 */
+	private bool $add_column;
 
 	/**
 	 * ACF_json_location_manager constructor.
@@ -58,9 +62,13 @@ class ACF_json_location_manager {
 	 *
 	 * 'load-json' : This directory is used used to centralize all json files
 	 *               before triggering 'acf/settings/load_json' hook. It stands in theme root,
-	 *               in order to change theme without problem. (default = 'ajlm')
+	 *               in order to change theme without problem.
+	 *               default = 'ajlm'
 	 * 'json-dir' :  This directory stands in each Theme,Plugin or user defined root dir and
-	 *               it is used to save json when triggering  'acf/settings/save_json' hook
+	 *               it is used to save json when triggering  'acf/settings/save_json' hook.
+	 *               default = acf-json
+	 * 'add-column'  Boolean value. if true, a new column in Field Group list shows the JSON Location
+	 *               default = true.
 	 */
 
 	public function __construct( $args = null ) {
@@ -76,6 +84,9 @@ class ACF_json_location_manager {
 
 		// Add a meta box for Json locations
 		add_action( 'acf/field_group/admin_head', [ $this, 'add_json_location_meta_box' ] );
+
+		// Add information in admin field group table
+		add_action( 'manage_acf-field-group_posts_custom_column', [$this,'add_location_in_column'],11,2);
 
 		// Remove tmp file and dir.
 		add_action( 'acf/render_field_group_settings', [ $this, 'clean_dir' ] );
@@ -94,8 +105,9 @@ class ACF_json_location_manager {
 	private function settings( $args = null ): void {
 
 		$options = wp_parse_args( $args, [
-			'json-dir'  => 'acf-json',  // name of the json location in each plugin/theme
-			'load-json' => 'ajlm',      // Dir used for loading jsons
+			'json-dir'   => 'acf-json',  // name of the json location in each plugin/theme
+			'load-json'  => 'ajlm',      // Dir used for loading jsons
+			'add-column' => true,        // add a column
 		] );
 
 		if ( $options !== null ) {
@@ -117,6 +129,12 @@ class ACF_json_location_manager {
 						 */
 						$this->json_dir = $option;
 						break;
+
+					case 'add-column':
+						/**
+						 * Boolean value : if true, a new column in Field Group list shows the JSON Location
+						 */
+						$this->add_column = $option;
 					default :
 				}
 			}
@@ -424,7 +442,6 @@ class ACF_json_location_manager {
 
 				// Prepare for export.
 				$field_group = acf_prepare_field_group_for_export( $field_group );
-
 				// Save content
 				file_put_contents( $file, acf_json_encode( $field_group ) );
 			}
@@ -491,7 +508,7 @@ class ACF_json_location_manager {
 
 			global $field_group;
 
-			$locations= [];
+			$locations = [];
 			foreach ( $this->location_list as $key => $location ) {
 				$locations[ $key ] = $key;
 			}
@@ -512,4 +529,30 @@ class ACF_json_location_manager {
 		}, 'acf-field-group', 'normal' );
 
 	}
+
+	/**
+     *
+     * manage_acf-field-group_posts_custom_column hook
+     *
+     * Add the Json location information in the 'JSON Local" columnt after the existing text.
+     *
+	 * @param $column
+	 * @param $post_id
+	 */
+	public function add_location_in_column($column, $post_id ) {
+	    if ($this->add_column) {
+			    if ( $column === 'acf-json' ) {
+				    $post = get_post( $post_id );
+				    if ( $post ) {
+					    $field_group = (array) maybe_unserialize( $post->post_content );
+					    if ( isset( $field_group['json-location']) ) {
+						    ?>
+                            <div>&blacktriangleright;&nbsp;<?= $field_group['json-location'] ?></div>
+						    <?php
+					    }
+				    }
+			    }
+		    }
+	    }
 }
+
