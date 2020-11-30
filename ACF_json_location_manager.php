@@ -496,8 +496,6 @@ class ACF_json_location_manager {
 				$locations[ $key ] = $key;
 			}
 
-			$selection = $field_group[ $this->type ] ?? $locations[ array_key_first( $locations ) ];
-
 			// Form settings
 			acf_render_field_wrap( array(
 				'label'        => __( 'Json location', 'noleam' ),
@@ -506,7 +504,7 @@ class ACF_json_location_manager {
 				'type'         => 'select',
 				'ui'           => 1,
 				'instructions' => __( 'Select a location', 'noleam' ),
-				'value'        => $selection,
+				'value'        => $field_group[ $this->type ] ?? $locations[ array_key_first( $locations ) ],
 				'choices'      => $locations,
 				'required'     => false,
 			) ); ?>
