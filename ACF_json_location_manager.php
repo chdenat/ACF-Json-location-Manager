@@ -203,7 +203,6 @@ class ACF_json_location_manager {
 		}
 
 
-
 		// We can also remove existing location or add any others.
 		$this->location_list = apply_filters( 'ajlm/manage-json-location', $this->location_list );
 	}
@@ -492,10 +491,12 @@ class ACF_json_location_manager {
 
 			global $field_group;
 
-			//$locations = [ '0' => __( 'none' ) ];
+			$locations= [];
 			foreach ( $this->location_list as $key => $location ) {
 				$locations[ $key ] = $key;
 			}
+
+			$selection = $field_group[ $this->type ] ?? $locations[ array_key_first( $locations ) ];
 
 			// Form settings
 			acf_render_field_wrap( array(
@@ -505,7 +506,7 @@ class ACF_json_location_manager {
 				'type'         => 'select',
 				'ui'           => 1,
 				'instructions' => __( 'Select a location', 'noleam' ),
-				'value'        => $field_group[ $this->type ],
+				'value'        => $selection,
 				'choices'      => $locations,
 				'required'     => false,
 			) ); ?>
