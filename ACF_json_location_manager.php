@@ -86,7 +86,7 @@ class ACF_json_location_manager {
 		add_action( 'acf/field_group/admin_head', [ $this, 'add_json_location_meta_box' ] );
 
 		// Add information in admin field group table
-		add_action( 'manage_acf-field-group_posts_custom_column', [$this,'add_location_in_column'],11,2);
+		add_action( 'manage_acf-field-group_posts_custom_column', [ $this, 'add_location_in_column' ], 11, 2 );
 
 		// Remove tmp file and dir.
 		add_action( 'acf/render_field_group_settings', [ $this, 'clean_dir' ] );
@@ -531,28 +531,30 @@ class ACF_json_location_manager {
 	}
 
 	/**
-     *
-     * manage_acf-field-group_posts_custom_column hook
-     *
-     * Add the Json location information in the 'JSON Local" columnt after the existing text.
-     *
+	 *
+	 * manage_acf-field-group_posts_custom_column hook
+	 *
+	 * Add the Json location information in the 'JSON Local" column after the existing text.
+	 *
 	 * @param $column
 	 * @param $post_id
 	 */
-	public function add_location_in_column($column, $post_id ) {
-	    if ($this->add_column) {
-			    if ( $column === 'acf-json' ) {
-				    $post = get_post( $post_id );
-				    if ( $post ) {
-					    $field_group = (array) maybe_unserialize( $post->post_content );
-					    if ( isset( $field_group['json-location']) ) {
-						    ?>
-                            <div>&blacktriangleright;&nbsp;<?= $field_group['json-location'] ?></div>
-						    <?php
-					    }
-				    }
-			    }
-		    }
-	    }
+	public function add_location_in_column( $column, $post_id ) {
+		if ( $this->add_column ) {
+			if ( $column === 'acf-json' ) {
+				$post = get_post( $post_id );
+				if ( $post ) {
+					$field_group = (array) maybe_unserialize( $post->post_content );
+					$file        = $this->get_file( $field_group );
+					//We check if file exist (could be an imported value)...
+					if ( isset( $field_group['json-location'] ) && file_exists( $this->get_path( $field_group ) ) ) {
+						?>
+                        <div>&blacktriangleright;&nbsp;<?= $field_group['json-location'] ?></div>
+						<?php
+					}
+				}
+			}
+		}
+	}
 }
 
