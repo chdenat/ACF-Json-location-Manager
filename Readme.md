@@ -74,6 +74,8 @@ By default, AJLM will use :
 ```PHP
 'json-dir'  => 'acf-json',  // name of the json location in each plugin/theme
 'load-json' => 'ajlm',      // Dir used for loading jsons
+'add-column' => 'true'      // Display informtin in Field Group table
+
 ```
 but it is possible to use your own settings by specifying some parameters during the init call.
 ```PHP
