@@ -272,12 +272,14 @@ class ACF_json_location_manager {
 	 *
 	 * @param null $args
 	 *
-	 * @return ACF_json_location_manager
+	 * @return ACF_json_location_manager|null
 	 *
 	 * @since 2.0
 	 */
 
-	public static function init( $args = null ): ACF_json_location_manager {
+	public static function init( $args = null ): ?ACF_json_location_manager {
+	    if (!is_admin()) return null;
+
 		if ( ! isset( self::$_instance ) ) {
 			self::$_instance = new ACF_json_location_manager( $args );
 		}

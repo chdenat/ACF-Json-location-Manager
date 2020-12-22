@@ -2,7 +2,7 @@
 ACF companion class to help developers to manage the json file locations (plugins, themes or user defined) 
 for synchronization on different platforms.
 
-- Version 2.1
+- Version 2.2
 
 ## The developer dilemma with ACF...
 
@@ -121,6 +121,8 @@ By default : location is in the current theme (as ACF)
 
 ## Version log
 
+### 2.2  (2020/12/22):
+- AJLM is now restricted to admin only.
 ### 2.1  (2020/11/30):
 - add the possibility (enabled by default) to display the JSON location in the Field Group admin table,
   in JSON Local column (ACF 5.9+) . This can be disabled in settings. 
