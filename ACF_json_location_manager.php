@@ -9,7 +9,7 @@
  * it manages jsons when required ie during load, save, trash, un trash or delete actions.
  *
  *
- * @version : 2.1
+ * @version : 2.2
  * @author : Christian Denat
  * @mail : contact@noleam.fr
  *
@@ -253,7 +253,11 @@ class ACF_json_location_manager {
 			$files = glob( $this->load_json . '/*.json' );
 			foreach ( $files as $file ) {
 				if ( is_file( $file ) ) {
-					unlink( $file );
+					try {
+						unlink( $file );
+					} catch ( \Exception $e ) {
+						// failed silently
+					}
 				}
 			}
 
@@ -278,7 +282,9 @@ class ACF_json_location_manager {
 	 */
 
 	public static function init( $args = null ): ?ACF_json_location_manager {
-	    if (!is_admin()) return null;
+		if ( ! is_admin() ) {
+			return null;
+		}
 
 		if ( ! isset( self::$_instance ) ) {
 			self::$_instance = new ACF_json_location_manager( $args );
@@ -366,11 +372,12 @@ class ACF_json_location_manager {
 	 *
 	 */
 	private function get_file( $field_group, $new_key = null ) {
-		$key  = ( $new_key ) ?: $field_group['key'];
-		$path = $this->get_path( $field_group );
-
-		if ( $path ) {
-			return untrailingslashit( $path ) . '/' . $key . '.json';
+		$key = ( $new_key ) ?? $field_group['key'] ?? null;
+		if ( $key ) {
+			$path = $this->get_path( $field_group );
+			if ( $path ) {
+				return untrailingslashit( $path ) . '/' . $key . '.json';
+			}
 		}
 
 		return false;
