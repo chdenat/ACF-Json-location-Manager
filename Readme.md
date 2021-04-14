@@ -122,7 +122,7 @@ By default : location is in the current theme (as ACF)
 
 ## Version log
 
-### 2.3 (2021/04/14):
+### 2.3  (2021/04/14):
 - Sometimes a warning occured during JSON cleaning. Now failed silently :)
 
 ### 2.2  (2020/12/22):
