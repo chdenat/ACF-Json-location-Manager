@@ -9,7 +9,7 @@
  * it manages jsons when required ie during load, save, trash, un trash or delete actions.
  *
  *
- * @version : 2.2
+ * @version : 2.3
  * @author : Christian Denat
  * @mail : contact@noleam.fr
  *

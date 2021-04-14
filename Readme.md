@@ -2,7 +2,7 @@
 ACF companion class to help developers to manage the json file locations (plugins, themes or user defined) 
 for synchronization on different platforms.
 
-- Version 2.2
+- Version 2.3
 
 ## The developer dilemma with ACF...
 
@@ -72,10 +72,11 @@ ACF_json_location_manager::init();
 
 By default, AJLM will use :
 ```PHP
+[
 'json-dir'  => 'acf-json',  // name of the json location in each plugin/theme
 'load-json' => 'ajlm',      // Dir used for loading jsons
 'add-column' => 'true'      // Display information in Field Groups table
-
+];
 ```
 but it is possible to use your own settings by specifying some parameters during the init call.
 ```PHP
@@ -120,6 +121,9 @@ the file in the former location will be removed.
 By default : location is in the current theme (as ACF)
 
 ## Version log
+
+### 2.3 (2021/04/14):
+- Sometimes a warning occured during JSON cleaning. Now failed silently :)
 
 ### 2.2  (2020/12/22):
 - AJLM is now restricted to admin only.
